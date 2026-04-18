@@ -103,11 +103,12 @@ const Icon = ({ type, color="#9CA3AF" }) => {
   return icons[type] || null;
 };
 
-export default function Dashboard({ user, onLogout }) {
+export default function Dashboard({ user, onLogout, isNew = false }) {
   const plan = user?.plan || "Basic";
   const limits = PLAN_LIMITS[plan] || PLAN_LIMITS["Basic"];
 
   const [page, setPage] = useState("reviews");
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const [tab, setTab] = useState("google");
   const [googleReviews, setGoogleReviews] = usePersist("rp_google", INITIAL_REVIEWS);
   const [igComments,    setIgComments]    = usePersist("rp_ig",     INITIAL_IG);
@@ -301,6 +302,20 @@ export default function Dashboard({ user, onLogout }) {
           {/* ── REVIEWS ── */}
           {page==="reviews" && (
             <div>
+              {isNew && !welcomeDismissed && (
+                <div style={{ background:"linear-gradient(135deg,#16a34a,#15803d)", borderRadius:12, padding:"20px 24px", marginBottom:20, color:"white", display:"flex", justifyContent:"space-between", alignItems:"center", gap:16, flexWrap:"wrap" }}>
+                  <div>
+                    <div style={{ fontWeight:700, fontSize:16, marginBottom:4 }}>ברוך הבא ל-ReviewPilot, {user?.name || "משתמש"} 👋</div>
+                    <div style={{ fontSize:13, opacity:0.85, lineHeight:1.6 }}>
+                      הגדר את מפתח ה-API שלך בהגדרות כדי להפעיל תגובות AI · חבר את חשבון Google Business · הוסף מילות מפתח לתגובות אוטומטיות
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", gap:8, flexShrink:0 }}>
+                    <button onClick={() => setPage("settings")} style={{ padding:"8px 16px", borderRadius:7, border:"none", background:"white", color:"#16a34a", cursor:"pointer", fontSize:13, fontWeight:700, fontFamily:"inherit" }}>הגדרות</button>
+                    <button onClick={() => setWelcomeDismissed(true)} style={{ padding:"8px 12px", borderRadius:7, border:"1px solid rgba(255,255,255,0.4)", background:"transparent", color:"white", cursor:"pointer", fontSize:13, fontFamily:"inherit" }}>סגור</button>
+                  </div>
+                </div>
+              )}
               <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:20 }}>
                 {[
                   { label:"Pending", value:pending, sub:"need reply", color:"#D97706" },

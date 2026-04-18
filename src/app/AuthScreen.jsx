@@ -38,7 +38,7 @@ export default function AuthScreen({ onSuccess, onBack, defaultMode = "login" })
     if (mode === "signup") {
       setStep("verify");
     } else {
-      onSuccess({ email, name: "משתמש" });
+      onSuccess({ email, name: "משתמש", isNew: false });
     }
     setLoading(false);
   };
@@ -47,7 +47,7 @@ export default function AuthScreen({ onSuccess, onBack, defaultMode = "login" })
     setLoading(true);
     // const { error } = await supabase.auth.signInWithOAuth({ provider: "google" });
     await new Promise(r => setTimeout(r, 1000));
-    onSuccess({ email: "user@gmail.com", name: "משתמש גוגל" });
+    onSuccess({ email: "user@gmail.com", name: "משתמש גוגל", isNew: mode === "signup" });
     setLoading(false);
   };
 
@@ -62,8 +62,8 @@ export default function AuthScreen({ onSuccess, onBack, defaultMode = "login" })
           <p style={{ fontSize: 14, color: "#6B7280", textAlign: "center", lineHeight: 1.7 }}>
             שלחנו קישור אימות ל-<strong>{email}</strong><br/>לחץ על הקישור כדי להפעיל את החשבון.
           </p>
-          <button onClick={() => onSuccess({ email, name })} style={{ ...btnStyle, marginTop: 24, background: "#16a34a", color: "white" }}>
-            המשך לדשבורד
+          <button onClick={() => onSuccess({ email, name, isNew: true })} style={{ ...btnStyle, marginTop: 24, background: "#16a34a", color: "white" }}>
+            המשך לבחירת תוכנית
           </button>
         </div>
       </div>

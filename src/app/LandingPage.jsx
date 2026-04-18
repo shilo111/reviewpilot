@@ -162,6 +162,26 @@ export default function LandingPage({ onSignup, onLogin }) {
         </div>
       </section>
 
+      {/* ── STATS ── */}
+      <section style={{ padding: "56px 48px", maxWidth: 1100, margin: "0 auto" }}>
+        <Fade>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 24, textAlign: "center" }}>
+            {[
+              { value: "500+", label: "עסקים פעילים", sub: "בישראל" },
+              { value: "98%", label: "שביעות רצון", sub: "מהלקוחות" },
+              { value: "4.8★", label: "דירוג ממוצע", sub: "לאחר שימוש" },
+              { value: "2 שניות", label: "זמן תגובה", sub: "ממוצע ל-AI" },
+            ].map((s, i) => (
+              <div key={i} style={{ padding: "20px 16px" }}>
+                <div style={{ fontSize: 36, fontWeight: 800, color: "#16a34a", letterSpacing: "-1px", marginBottom: 6 }}>{s.value}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 3 }}>{s.label}</div>
+                <div style={{ fontSize: 12, color: "#9CA3AF" }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+        </Fade>
+      </section>
+
       {/* ── FEATURES ── */}
       <section style={{ padding: "80px 48px", maxWidth: 1100, margin: "0 auto" }}>
         <Fade>
@@ -265,7 +285,7 @@ export default function LandingPage({ onSignup, onLogin }) {
                       </div>
                     ))}
                   </div>
-                  <button onClick={onSignup} style={{ width: "100%", padding: "11px", borderRadius: 8, border: "none", background: p.highlight ? "white" : "#16a34a", color: p.highlight ? "#16a34a" : "white", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>{p.cta}</button>
+                  <button onClick={() => onSignup(p.name)} style={{ width: "100%", padding: "11px", borderRadius: 8, border: "none", background: p.highlight ? "white" : "#16a34a", color: p.highlight ? "#16a34a" : "white", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>{p.cta}</button>
                 </div>
               </Fade>
             ))}

@@ -28,9 +28,9 @@ try { localStorage.removeItem(“rp_user”); } catch {}
 setScreen(“landing”);
 };
 
-if (screen === “landing”) return <LandingPage onSignup={() => setScreen(“signup”)} onLogin={() => setScreen(“login”)}/>;
-if (screen === “login”)   return <AuthScreen defaultMode=“login”  onSuccess={handleLogin} onBack={() => setScreen(“landing”)}/>;
-if (screen === “signup”)  return <AuthScreen defaultMode=“signup” onSuccess={handleLogin} onBack={() => setScreen(“landing”)}/>;
+if (screen === “landing”)   return <LandingPage onSignup={() => setScreen(“signup”)} onLogin={() => setScreen(“login”)}/>;
+if (screen === “login”)     return <AuthScreen defaultMode=“login”  onSuccess={handleLogin} onBack={() => setScreen(“landing”)}/>;
+if (screen === “signup”)    return <AuthScreen defaultMode=“signup” onSuccess={handleLogin} onBack={() => setScreen(“landing”)}/>;
 if (screen === “dashboard”) return <Dashboard user={user} onLogout={handleLogout}/>;
 return null;
 }

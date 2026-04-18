@@ -117,16 +117,19 @@ export default function Dashboard({ user, onLogout, isNew = false }) {
   const [apiKey,        setApiKey]        = usePersist("rp_key",    "");
   const [reportEmail,   setReportEmail]   = usePersist("rp_email",  "");
 
-  const [selected,  setSelected]  = useState(null);
-  const [reply,     setReply]     = useState("");
-  const [loading,   setLoading]   = useState(false);
-  const [search,    setSearch]    = useState("");
-  const [filter,    setFilter]    = useState(0);
-  const [newKws,    setNewKws]    = useState("");
-  const [newResp,   setNewResp]   = useState("");
-  const [newTName,  setNewTName]  = useState("");
-  const [newTText,  setNewTText]  = useState("");
-  const [saved,     setSaved]     = useState("");
+  const [selected,      setSelected]      = useState(null);
+  const [reply,         setReply]         = useState("");
+  const [loading,       setLoading]       = useState(false);
+  const [search,        setSearch]        = useState("");
+  const [filter,        setFilter]        = useState(0);
+  const [newKws,        setNewKws]        = useState("");
+  const [newResp,       setNewResp]       = useState("");
+  const [newTName,      setNewTName]      = useState("");
+  const [newTText,      setNewTText]      = useState("");
+  const [saved,         setSaved]         = useState("");
+  const [showUpgrade,   setShowUpgrade]   = useState(false);
+  const [showCancel,    setShowCancel]    = useState(false);
+  const [currentPlan,   setCurrentPlan]   = useState({ name: plan, price: user?.planPrice || 79 });
 
   const rawItems = tab === "google" ? googleReviews : igComments;
   const items = useMemo(() => {
@@ -167,6 +170,34 @@ export default function Dashboard({ user, onLogout, isNew = false }) {
 
   const saveToast = (msg) => { setSaved(msg); setTimeout(() => setSaved(""), 2500); };
 
+  const UPGRADE_PLANS = [
+    { name:"Basic",    price:79,  features:["50 תגובות/חודש","Google Reviews","3 מילות מפתח"] },
+    { name:"Pro",      price:149, features:["ללא הגבלת תגובות","Google + Instagram","20 מילות מפתח","אנליטיקס מלא"] },
+    { name:"Business", price:299, features:["כמה סניפים","מילות מפתח ללא הגבלה","API גישה","מנהל אישי"] },
+  ];
+
+  const handleUpgrade = (newPlan, newPrice) => {
+    setCurrentPlan({ name: newPlan, price: newPrice });
+    try {
+      const updated = { ...user, plan: newPlan, planPrice: newPrice };
+      localStorage.setItem("rp_user", JSON.stringify(updated));
+    } catch {}
+    setShowUpgrade(false);
+    saveToast(`עברת לתוכנית ${newPlan} בהצלחה`);
+    setTimeout(() => window.location.reload(), 1000);
+  };
+
+  const handleCancel = () => {
+    setCurrentPlan({ name: "Basic", price: 79 });
+    try {
+      const updated = { ...user, plan: "Basic", planPrice: 79 };
+      localStorage.setItem("rp_user", JSON.stringify(updated));
+    } catch {}
+    setShowCancel(false);
+    saveToast("המנוי בוטל · עברת לתוכנית Basic");
+    setTimeout(() => window.location.reload(), 1500);
+  };;
+
   // ── Styles ──
   const S = {
     card: { background:"white", border:"1px solid #E5E7EB", borderRadius:10 },
@@ -185,6 +216,73 @@ export default function Dashboard({ user, onLogout, isNew = false }) {
 
   return (
     <div dir="rtl" style={{ minHeight:"100vh", background:"#F9FAFB", fontFamily:"'Segoe UI',system-ui,sans-serif", color:"#111827", display:"flex" }}>
+
+      {/* Upgrade Modal */}
+      {showUpgrade && (
+        <>
+          <div onClick={() => setShowUpgrade(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", zIndex:200 }}/>
+          <div dir="rtl" style={{ position:"fixed", top:"50%", left:"50%", transform:"translate(-50%,-50%)", zIndex:201, background:"white", borderRadius:16, padding:"32px 28px", width:"min(92vw,780px)", maxHeight:"90vh", overflowY:"auto", boxShadow:"0 24px 80px rgba(0,0,0,0.2)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24 }}>
+              <div>
+                <h2 style={{ margin:"0 0 4px", fontSize:20, fontWeight:800 }}>שנה תוכנית</h2>
+                <p style={{ margin:0, fontSize:13, color:"#9CA3AF" }}>תוכנית נוכחית: <strong>{currentPlan.name}</strong></p>
+              </div>
+              <button onClick={() => setShowUpgrade(false)} style={{ background:"none", border:"1px solid #E5E7EB", cursor:"pointer", width:32, height:32, borderRadius:8, fontSize:16, color:"#6B7280" }}>✕</button>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))", gap:14 }}>
+              {UPGRADE_PLANS.map(p => {
+                const isCurrent = p.name === currentPlan.name;
+                const isDowngrade = UPGRADE_PLANS.findIndex(x=>x.name===p.name) < UPGRADE_PLANS.findIndex(x=>x.name===currentPlan.name);
+                return (
+                  <div key={p.name} style={{ border:`2px solid ${isCurrent?"#16a34a":"#E5E7EB"}`, borderRadius:12, padding:"20px 18px", background:isCurrent?"#F0FDF4":"white", position:"relative" }}>
+                    {isCurrent && <div style={{ position:"absolute", top:-11, right:16, background:"#16a34a", color:"white", fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:20 }}>תוכנית נוכחית</div>}
+                    <div style={{ fontSize:13, color:"#9CA3AF", fontWeight:600, marginBottom:4 }}>{p.name}</div>
+                    <div style={{ fontSize:32, fontWeight:800, letterSpacing:"-1px", marginBottom:14 }}>₪{p.price}<span style={{ fontSize:13, fontWeight:400, color:"#9CA3AF" }}>/חודש</span></div>
+                    {p.features.map(f => (
+                      <div key={f} style={{ display:"flex", gap:7, alignItems:"center", marginBottom:8, fontSize:13 }}>
+                        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 6.5l3 3 6-6" stroke="#16a34a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        <span style={{ color:"#374151" }}>{f}</span>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => !isCurrent && handleUpgrade(p.name, p.price)}
+                      disabled={isCurrent}
+                      style={{ width:"100%", marginTop:16, padding:"10px", borderRadius:8, border:"none", background:isCurrent?"#E5E7EB":"#16a34a", color:isCurrent?"#9CA3AF":"white", cursor:isCurrent?"default":"pointer", fontSize:13, fontWeight:700, fontFamily:"inherit" }}
+                    >
+                      {isCurrent ? "תוכנית נוכחית" : isDowngrade ? "מעבר לתוכנית זו" : "שדרג"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Cancel Modal */}
+      {showCancel && (
+        <>
+          <div onClick={() => setShowCancel(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", zIndex:200 }}/>
+          <div dir="rtl" style={{ position:"fixed", top:"50%", left:"50%", transform:"translate(-50%,-50%)", zIndex:201, background:"white", borderRadius:14, padding:"32px 28px", width:"min(92vw,420px)", boxShadow:"0 24px 80px rgba(0,0,0,0.2)" }}>
+            <div style={{ width:48, height:48, borderRadius:"50%", background:"#FEF2F2", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 18px" }}>
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 7v6M11 15.5v.5" stroke="#DC2626" strokeWidth="2" strokeLinecap="round"/><circle cx="11" cy="11" r="9" stroke="#DC2626" strokeWidth="1.8"/></svg>
+            </div>
+            <h3 style={{ textAlign:"center", fontSize:18, fontWeight:700, margin:"0 0 10px" }}>לבטל את המנוי?</h3>
+            <p style={{ textAlign:"center", fontSize:14, color:"#6B7280", lineHeight:1.7, margin:"0 0 24px" }}>
+              תעבור לתוכנית Basic (חינמית) בסוף תקופת החיוב הנוכחית.<br/>
+              הנתונים שלך יישמרו.
+            </p>
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={() => setShowCancel(false)} style={{ flex:1, padding:"11px", borderRadius:8, border:"1.5px solid #E5E7EB", background:"white", cursor:"pointer", fontSize:14, fontWeight:600, fontFamily:"inherit", color:"#374151" }}>
+                ביטול
+              </button>
+              <button onClick={handleCancel} style={{ flex:1, padding:"11px", borderRadius:8, border:"none", background:"#DC2626", color:"white", cursor:"pointer", fontSize:14, fontWeight:700, fontFamily:"inherit" }}>
+                כן, בטל מנוי
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Toast */}
       {saved && (
@@ -547,7 +645,16 @@ export default function Dashboard({ user, onLogout, isNew = false }) {
                     <span style={{ fontWeight:500, color:r.value==="Included"?"#16a34a":r.value==="Not included"?"#9CA3AF":"#374151" }}>{r.value}</span>
                   </div>
                 ))}
-                {plan!=="Business" && <button style={{...S.btn,width:"100%",marginTop:14}}>Upgrade plan</button>}
+                <div style={{ display:"flex", gap:8, marginTop:16 }}>
+                  <button onClick={() => setShowUpgrade(true)} style={{ ...S.btn, flex:1 }}>
+                    {currentPlan.name === "Business" ? "נהל תוכנית" : "שדרג תוכנית"}
+                  </button>
+                  {currentPlan.name !== "Basic" && (
+                    <button onClick={() => setShowCancel(true)} style={{ ...S.btnGhost, flex:1, color:"#DC2626", borderColor:"#FECACA" }}>
+                      בטל מנוי
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

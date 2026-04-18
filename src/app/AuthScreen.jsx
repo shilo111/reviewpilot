@@ -1,18 +1,15 @@
 "use client";
 import { useState } from "react";
-
-// ── בקוד אמיתי נייבא מ-supabase ──
-// import { createClient } from "@supabase/supabase-js";
-// const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+import { supabase } from "../lib/supabase";
 
 export default function AuthScreen({ onSuccess, onBack, defaultMode = "login" }) {
-  const [mode, setMode] = useState(defaultMode); // "login" | "signup"
+  const [mode, setMode] = useState(defaultMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [step, setStep] = useState("form"); // "form" | "verify"
+  const [step, setStep] = useState("form");
 
   const handleSubmit = async () => {
     if (!email || !password) { setError("נא למלא את כל השדות"); return; }
@@ -22,33 +19,42 @@ export default function AuthScreen({ onSuccess, onBack, defaultMode = "login" })
     setLoading(true);
     setError("");
 
-    // ── קוד אמיתי עם Supabase ──
-    // if (mode === "signup") {
-    //   const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } });
-    //   if (error) { setError(error.message); setLoading(false); return; }
-    //   setStep("verify");
-    // } else {
-    //   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    //   if (error) { setError("אימייל או סיסמה שגויים"); setLoading(false); return; }
-    //   onSuccess(data.user);
-    // }
-
-    // סימולציה להדגמה
-    await new Promise(r => setTimeout(r, 1200));
     if (mode === "signup") {
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: name } },
+      });
+      if (signUpError) {
+        setError(signUpError.message === "User already registered" ? "כתובת האימייל הזו כבר רשומה" : signUpError.message);
+        setLoading(false);
+        return;
+      }
       setStep("verify");
     } else {
-      onSuccess({ email, name: "משתמש", isNew: false });
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) {
+        setError("אימייל או סיסמה שגויים");
+        setLoading(false);
+        return;
+      }
+      onSuccess({
+        email: data.user.email,
+        name: data.user.user_metadata?.full_name || data.user.email,
+        id: data.user.id,
+        isNew: false,
+      });
     }
     setLoading(false);
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    // const { error } = await supabase.auth.signInWithOAuth({ provider: "google" });
-    await new Promise(r => setTimeout(r, 1000));
-    onSuccess({ email: "user@gmail.com", name: "משתמש גוגל", isNew: mode === "signup" });
-    setLoading(false);
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
+    if (oauthError) { setError(oauthError.message); setLoading(false); }
   };
 
   if (step === "verify") {
@@ -74,7 +80,6 @@ export default function AuthScreen({ onSuccess, onBack, defaultMode = "login" })
     <div dir="rtl" style={containerStyle}>
       <div style={cardStyle}>
 
-        {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 28 }}>
           <div style={{ width: 28, height: 28, borderRadius: 7, background: "#16a34a", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="13" height="13" viewBox="0 0 13 13" fill="white"><path d="M6.5 1L8 4.5 12 5l-2.8 2.7.7 4-3.4-1.8-3.4 1.8.7-4L1 5l4-.5L6.5 1z"/></svg>
@@ -89,7 +94,6 @@ export default function AuthScreen({ onSuccess, onBack, defaultMode = "login" })
           {mode === "login" ? "ברוך השב!" : "14 יום ניסיון חינם · ללא כרטיס אשראי"}
         </p>
 
-        {/* Google button */}
         <button onClick={handleGoogleLogin} disabled={loading} style={{ ...btnStyle, background: "white", color: "#374151", border: "1.5px solid #E5E7EB", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16 }}>
           <svg width="18" height="18" viewBox="0 0 18 18">
             <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
@@ -100,14 +104,12 @@ export default function AuthScreen({ onSuccess, onBack, defaultMode = "login" })
           {mode === "login" ? "כניסה עם Google" : "הרשמה עם Google"}
         </button>
 
-        {/* Divider */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
           <div style={{ flex: 1, height: 1, background: "#E5E7EB" }}/>
           <span style={{ fontSize: 12, color: "#9CA3AF" }}>או עם אימייל</span>
           <div style={{ flex: 1, height: 1, background: "#E5E7EB" }}/>
         </div>
 
-        {/* Form */}
         {mode === "signup" && (
           <div style={{ marginBottom: 12 }}>
             <label style={labelStyle}>שם מלא</label>
@@ -129,7 +131,7 @@ export default function AuthScreen({ onSuccess, onBack, defaultMode = "login" })
 
         {error && <div style={{ marginBottom: 14, padding: "9px 12px", borderRadius: 6, background: "#FEF2F2", border: "1px solid #FECACA", color: "#DC2626", fontSize: 13 }}>{error}</div>}
 
-        <button onClick={handleSubmit} disabled={loading} style={{ ...btnStyle, background: "#16a34a", color: "white", marginBottom: 16 }}>
+        <button onClick={handleSubmit} disabled={loading} style={{ ...btnStyle, background: "#16a34a", color: "white", marginBottom: 16, opacity: loading ? 0.7 : 1 }}>
           {loading ? "טוען..." : mode === "login" ? "כניסה" : "יצירת חשבון"}
         </button>
 
@@ -151,56 +153,8 @@ export default function AuthScreen({ onSuccess, onBack, defaultMode = "login" })
   );
 }
 
-const containerStyle = {
-  minHeight: "100vh",
-  background: "#F9FAFB",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 24,
-  fontFamily: "'Segoe UI', system-ui, sans-serif",
-};
-
-const cardStyle = {
-  background: "white",
-  borderRadius: 14,
-  padding: "36px 32px",
-  maxWidth: 420,
-  width: "100%",
-  boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
-  border: "1px solid #E5E7EB",
-};
-
-const inputStyle = {
-  width: "100%",
-  padding: "10px 13px",
-  borderRadius: 7,
-  border: "1.5px solid #E5E7EB",
-  fontSize: 14,
-  outline: "none",
-  boxSizing: "border-box",
-  fontFamily: "inherit",
-  color: "#111827",
-  transition: "border-color 0.15s",
-};
-
-const labelStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  fontSize: 13,
-  fontWeight: 600,
-  color: "#374151",
-  marginBottom: 6,
-};
-
-const btnStyle = {
-  width: "100%",
-  padding: "11px",
-  borderRadius: 7,
-  border: "none",
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: "pointer",
-  fontFamily: "inherit",
-};
+const containerStyle = { minHeight: "100vh", background: "#F9FAFB", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: "'Segoe UI', system-ui, sans-serif" };
+const cardStyle = { background: "white", borderRadius: 14, padding: "36px 32px", maxWidth: 420, width: "100%", boxShadow: "0 4px 24px rgba(0,0,0,0.06)", border: "1px solid #E5E7EB" };
+const inputStyle = { width: "100%", padding: "10px 13px", borderRadius: 7, border: "1.5px solid #E5E7EB", fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit", color: "#111827", transition: "border-color 0.15s" };
+const labelStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 };
+const btnStyle = { width: "100%", padding: "11px", borderRadius: 7, border: "none", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" };
